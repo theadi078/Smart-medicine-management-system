@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant — Smart Medicine Manager{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-2"><i class="bi bi-robot text-primary"></i> Smart Medicine Assistant</h4>
+<p class="text-muted mb-3">Ask about your saved medicines, schedule, expiry dates, or missed doses. This assistant answers only from your own saved data — it never diagnoses conditions or recommends medicines.</p>
+
+<div class="panel">
+  <div id="chatWindow" class="chat-window mb-3">
+    <div class="chat-bubble ai">Hello! I can help you check your medicine schedule, expiring medicines, or missed doses. What would you like to know?</div>
+  </div>
+
+  <div class="mb-2">
+    {% for q in suggested_questions %}
+    <button type="button" class="suggested-chip" data-question="{{ q }}">{{ q }}</button>
+    {% endfor %}
+  </div>
+
+  <form id="chatForm" class="d-flex gap-2">
+    <input type="text" id="chatInput" class="form-control" placeholder="Ask about your medicine schedule..." autocomplete="off">
+    <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill"></i></button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% endblock %}

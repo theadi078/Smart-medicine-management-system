@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Medicine Manager{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-0">Hi, {{ current_user.name.split(' ')[0] }} 👋</h4>
+    <p class="text-muted mb-0">Here's your medicine overview for today.</p>
+  </div>
+  <a href="{{ url_for('medicines.add_medicine') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Medicine</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-soft-primary"><i class="bi bi-capsule"></i></div>
+      <div class="stat-value">{{ total_medicines }}</div>
+      <div class="stat-label">Total Medicines</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-soft-teal"><i class="bi bi-calendar-check"></i></div>
+      <div class="stat-value">{{ today_count }}</div>
+      <div class="stat-label">Today's Schedule</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-soft-amber"><i class="bi bi-hourglass-split"></i></div>
+      <div class="stat-value">{{ expiring_soon_count }}</div>
+      <div class="stat-label">Expiring Soon</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-soft-red"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="stat-value">{{ missed_count }}</div>
+      <div class="stat-label">Missed</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="panel mb-3">
+      <div class="panel-title">
+        <span>Today's Medicines</span>
+        <a href="{{ url_for('schedule.index') }}" class="small">View schedule</a>
+      </div>
+      {% if today_rows %}
+      <div class="table-responsive">
+        <table class="table table-modern">
+          <thead>
+            <tr><th>Medicine</th><th>Time</th><th>Dosage</th><th>Food</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for row in today_rows %}
+            {% set med = medicine_lookup.get(row.medicine_id) %}
+            <tr>
+              <td class="fw-semibold">{{ med.name if med else 'Unknown' }}</td>
+              <td>{{ row.scheduled_time.strftime('%I:%M %p') }}</td>
+              <td>{{ med.dosage or '—' if med else '—' }}</td>
+              <td>{{ med.food_instruction if med else '—' }}</td>
+              <td><span class="badge-status badge-{{ row.status|lower }}">{{ row.status }}</span></td>
+              <td>
+                {% if row.status == 'Pending' %}
+                <div class="d-flex gap-1">
+                  <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="redirect_to" value="dashboard.index">
+                    <input type="hidden" name="action" value="taken">
+                    <button type="submit" class="btn btn-sm btn-soft-success" title="Taken"><i class="bi bi-check-lg"></i></button>
+                  </form>
+                  <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="redirect_to" value="dashboard.index">
+                    <input type="hidden" name="action" value="skipped">
+                    <button type="submit" class="btn btn-sm btn-soft-secondary" title="Skip"><i class="bi bi-x-lg"></i></button>
+                  </form>
+                  <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="redirect_to" value="dashboard.index">
+                    <input type="hidden" name="action" value="remind_later">
+                    <input type="hidden" name="minutes" value="10">
+                    <button type="submit" class="btn btn-sm btn-soft-danger" title="Remind in 10 min"><i class="bi bi-clock"></i></button>
+                  </form>
+                </div>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-calendar2-check"></i>
+        No medicines scheduled for today.
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><span>Upcoming Schedule</span></div>
+      {% if upcoming %}
+      <div class="row g-2">
+        {% for row in upcoming %}
+        {% set med = medicine_lookup.get(row.medicine_id) %}
+        <div class="col-sm-6">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold">{{ med.name if med else 'Unknown' }}</div>
+            <div class="text-muted small">
+              {{ row.scheduled_time.strftime('%I:%M %p') }} · {{ row.date.strftime('%b %d') }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-check2-circle"></i>No upcoming doses.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel">
+      <div class="panel-title">
+        <span>Expiring Soon</span>
+        <a href="{{ url_for('medicines.list_medicines', status='expiring_soon') }}" class="small">View all</a>
+      </div>
+      {% if expiring_soon %}
+        {% for m in expiring_soon %}
+        <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+          <div>
+            <div class="fw-semibold small">{{ m.name }}</div>
+            <div class="text-muted" style="font-size:.78rem;">{{ m.expiry_date.strftime('%b %d, %Y') }}</div>
+          </div>
+          <span class="badge-status badge-expiry-{{ 'expired' if m.days_until_expiry < 0 else ('tomorrow' if m.days_until_expiry <= 1 else 'soon') }}">
+            {% if m.days_until_expiry < 0 %}Expired{% elif m.days_until_expiry == 0 %}Today{% else %}{{ m.days_until_expiry }}d{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state py-4"><i class="bi bi-emoji-smile"></i>Nothing expiring soon.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

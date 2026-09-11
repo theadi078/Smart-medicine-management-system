@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Settings — Smart Medicine Manager{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-4">Settings</h4>
+
+<div class="panel" style="max-width:600px;">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="mb-3">
+      <label class="form-label">Theme Preference</label>
+      <select name="theme_preference" class="form-select">
+        <option value="light" {% if current_user.theme_preference == 'light' %}selected{% endif %}>Light</option>
+        <option value="dark" {% if current_user.theme_preference == 'dark' %}selected{% endif %}>Dark</option>
+      </select>
+      <div class="form-text">Dark theme support is planned for a future release.</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Default Reminder Window (minutes)</label>
+      <input type="number" min="5" name="default_reminder_window" class="form-control" value="{{ current_user.default_reminder_window }}">
+      <div class="form-text">How long a dose stays "Pending" before being marked "Missed", for new schedules.</div>
+    </div>
+
+    <div class="form-check mb-4">
+      <input class="form-check-input" type="checkbox" name="notifications_enabled" id="notifEnabled" {% if current_user.notifications_enabled %}checked{% endif %}>
+      <label class="form-check-label" for="notifEnabled">Enable notifications</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </form>
+</div>
+{% endblock %}

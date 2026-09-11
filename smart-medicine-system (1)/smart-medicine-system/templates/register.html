@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Register — Smart Medicine Manager{% endblock %}
+{% block guest_content %}
+<div class="auth-card">
+  <div class="text-center mb-4">
+    <i class="bi bi-capsule-pill text-primary" style="font-size:2rem;"></i>
+    <h4 class="fw-bold mt-2">Create your account</h4>
+    <p class="text-muted small">Start organizing your medicines</p>
+  </div>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="name" class="form-control" value="{{ name or '' }}" required autofocus>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" value="{{ email or '' }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" required minlength="6">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Confirm Password</label>
+      <input type="password" name="confirm_password" class="form-control" required minlength="6">
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Create Account</button>
+  </form>
+  <p class="text-center mt-3 small text-muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+</div>
+{% endblock %}

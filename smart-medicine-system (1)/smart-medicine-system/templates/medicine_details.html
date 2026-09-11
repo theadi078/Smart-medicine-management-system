@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ medicine.name }} — Smart Medicine Manager{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1">{{ medicine.name }}</h4>
+    <span class="badge-status badge-expiry-{{ medicine.expiry_status }}">
+      {% if medicine.expiry_status == 'expired' %}Expired{% elif medicine.expiry_status == 'expiring_tomorrow' %}Urgent{% elif medicine.expiry_status == 'expiring_soon' %}Expiring Soon{% else %}Active{% endif %}
+    </span>
+    {% if not medicine.is_active %}<span class="badge-status badge-skipped ms-1">Completed</span>{% endif %}
+  </div>
+  <div>
+    <a href="{{ url_for('medicines.edit_medicine', medicine_id=medicine.id) }}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+    <button class="btn btn-soft-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash"></i> Delete</button>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="panel mb-3">
+      <div class="panel-title">Medicine Information</div>
+      <dl class="row mb-0 small">
+        <dt class="col-5 text-muted">Type</dt><dd class="col-7">{{ medicine.medicine_type or '—' }}</dd>
+        <dt class="col-5 text-muted">Dosage</dt><dd class="col-7">{{ medicine.dosage or '—' }}</dd>
+        <dt class="col-5 text-muted">Quantity</dt><dd class="col-7">{{ medicine.quantity if medicine.quantity is not none else '—' }}</dd>
+        <dt class="col-5 text-muted">Food Instruction</dt><dd class="col-7">{{ medicine.food_instruction }}</dd>
+        <dt class="col-5 text-muted">Start Date</dt><dd class="col-7">{{ medicine.start_date.strftime('%b %d, %Y') if medicine.start_date else '—' }}</dd>
+        <dt class="col-5 text-muted">End Date</dt><dd class="col-7">{{ medicine.end_date.strftime('%b %d, %Y') if medicine.end_date else '—' }}</dd>
+        <dt class="col-5 text-muted">Expiry Date</dt><dd class="col-7">{{ medicine.expiry_date.strftime('%b %d, %Y') }}</dd>
+        <dt class="col-5 text-muted">Notes</dt><dd class="col-7">{{ medicine.notes or '—' }}</dd>
+        {% if medicine.prescription_file %}
+        <dt class="col-5 text-muted">Prescription File</dt><dd class="col-7">{{ medicine.prescription_file }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-title">Schedules</div>
+      {% if medicine.schedules %}
+      <div class="table-responsive mb-3">
+        <table class="table table-modern">
+          <thead><tr><th>Time</th><th>Frequency</th><th>Days</th><th>Window</th><th></th></tr></thead>
+          <tbody>
+            {% for s in medicine.schedules %}
+            <tr>
+              <td>{{ s.scheduled_time.strftime('%I:%M %p') }}</td>
+              <td>{{ s.frequency }}</td>
+              <td>{{ s.days_of_week or '—' }}</td>
+              <td>{{ s.reminder_window }} min</td>
+              <td class="text-end">
+                <form method="POST" action="{{ url_for('medicines.delete_schedule', schedule_id=s.id) }}" onsubmit="return confirm('Remove this schedule?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-soft-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state py-3"><i class="bi bi-clock"></i>No schedules yet.</div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('medicines.add_schedule', medicine_id=medicine.id) }}" class="row g-2 align-items-end border-top pt-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-3">
+          <label class="form-label small">Time</label>
+          <input type="time" name="scheduled_time" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Frequency</label>
+          <select name="frequency" class="form-select">
+            <option value="Daily">Daily</option>
+            <option value="Specific Days">Specific Days</option>
+            <option value="Alternate Days">Alternate Days</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Days (if specific)</label>
+          <input type="text" name="days_of_week" class="form-control" placeholder="Mon,Wed,Fri">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Window (min)</label>
+          <input type="number" name="reminder_window" class="form-control" value="60">
+        </div>
+        <div class="col-md-1">
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete {{ medicine.name }}?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        This will permanently delete the medicine, its schedules, and its history. This cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('medicines.delete_medicine', medicine_id=medicine.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete Permanently</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

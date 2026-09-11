@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ medicine.name }} — Smart Medicine Manager{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-4"><i class="bi bi-pencil-square text-primary"></i> Edit {{ medicine.name }}</h4>
+
+<form method="POST" enctype="multipart/form-data" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Basic Information</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Medicine Name *</label>
+      <input type="text" name="name" class="form-control" value="{{ medicine.name }}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Type</label>
+      <select name="medicine_type" class="form-select">
+        <option value="">Select</option>
+        {% for t in ['Tablet','Capsule','Syrup','Injection','Drops','Cream','Inhaler','Other'] %}
+        <option value="{{ t }}" {% if medicine.medicine_type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Quantity</label>
+      <input type="number" min="0" name="quantity" class="form-control" value="{{ medicine.quantity if medicine.quantity is not none else '' }}">
+    </div>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Prescription Information</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Dosage</label>
+      <input type="text" name="dosage" class="form-control" value="{{ medicine.dosage or '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Food Instruction</label>
+      <select name="food_instruction" class="form-select">
+        {% for f in food_instructions %}
+        <option value="{{ f }}" {% if medicine.food_instruction == f %}selected{% endif %}>{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-control" rows="2">{{ medicine.notes or '' }}</textarea>
+    </div>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Dates</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Start Date</label>
+      <input type="date" name="start_date" class="form-control" value="{{ medicine.start_date.isoformat() if medicine.start_date else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">End Date</label>
+      <input type="date" name="end_date" class="form-control" value="{{ medicine.end_date.isoformat() if medicine.end_date else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Expiry Date *</label>
+      <input type="date" name="expiry_date" class="form-control" value="{{ medicine.expiry_date.isoformat() }}" required>
+    </div>
+  </div>
+
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if medicine.is_active %}checked{% endif %}>
+    <label class="form-check-label" for="isActive">Active (uncheck to mark as Completed / archived)</label>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Prescription Document</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      {% if medicine.prescription_file %}
+        <div class="form-text mb-1">Current file on record: {{ medicine.prescription_file }}</div>
+      {% endif %}
+      <input type="file" name="prescription_file" class="form-control" accept=".png,.jpg,.jpeg,.pdf">
+      <div class="form-text">Upload a new file to replace the current one. PNG, JPG, or PDF — max 5MB.</div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Save Changes</button>
+  <a href="{{ url_for('medicines.medicine_details', medicine_id=medicine.id) }}" class="btn btn-outline-secondary px-4">Cancel</a>
+</form>
+{% endblock %}

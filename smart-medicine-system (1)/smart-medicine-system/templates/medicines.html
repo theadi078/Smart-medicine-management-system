@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Medicines — Smart Medicine Manager{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0">My Medicines</h4>
+  <a href="{{ url_for('medicines.add_medicine') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Medicine</a>
+</div>
+
+<div class="panel mb-3">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" class="form-control" placeholder="Medicine name..." value="{{ search }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="expiring_soon" {% if status_filter == 'expiring_soon' %}selected{% endif %}>Expiring Soon</option>
+        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Sort By</label>
+      <select name="sort" class="form-select">
+        <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name</option>
+        <option value="expiry_date" {% if sort_by == 'expiry_date' %}selected{% endif %}>Expiry Date</option>
+        <option value="created_date" {% if sort_by == 'created_date' %}selected{% endif %}>Recently Added</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Apply</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  {% if medicines %}
+  <div class="table-responsive">
+    <table class="table table-modern">
+      <thead>
+        <tr><th>Medicine</th><th>Type</th><th>Dosage</th><th>Quantity</th><th>Expiry</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for m in medicines %}
+        <tr>
+          <td class="fw-semibold"><a href="{{ url_for('medicines.medicine_details', medicine_id=m.id) }}" class="text-dark">{{ m.name }}</a></td>
+          <td>{{ m.medicine_type or '—' }}</td>
+          <td>{{ m.dosage or '—' }}</td>
+          <td>{{ m.quantity if m.quantity is not none else '—' }}</td>
+          <td>{{ m.expiry_date.strftime('%b %d, %Y') }}</td>
+          <td>
+            {% set st = m.expiry_status %}
+            <span class="badge-status badge-expiry-{{ st }}">
+              {% if st == 'expired' %}Expired{% elif st == 'expiring_tomorrow' %}Urgent{% elif st == 'expiring_soon' %}Expiring Soon{% else %}Active{% endif %}
+            </span>
+            {% if not m.is_active %}<span class="badge-status badge-skipped ms-1">Completed</span>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('medicines.medicine_details', medicine_id=m.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+            <a href="{{ url_for('medicines.edit_medicine', medicine_id=m.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-capsule"></i>
+    <p class="mb-2">No medicines found.</p>
+    <a href="{{ url_for('medicines.add_medicine') }}" class="btn btn-primary btn-sm">Add your first medicine</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

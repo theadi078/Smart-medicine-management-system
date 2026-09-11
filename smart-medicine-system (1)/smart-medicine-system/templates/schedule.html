@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Schedule — Smart Medicine Manager{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0">Schedule</h4>
+  <div class="btn-group">
+    <a href="{{ url_for('schedule.index', view='today') }}" class="btn btn-sm {{ 'btn-primary' if view=='today' else 'btn-outline-secondary' }}">Today</a>
+    <a href="{{ url_for('schedule.index', view='week') }}" class="btn btn-sm {{ 'btn-primary' if view=='week' else 'btn-outline-secondary' }}">This Week</a>
+  </div>
+</div>
+
+{% if view == 'today' %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="panel mb-3">
+      <div class="panel-title">Today's Doses</div>
+      {% if today_rows %}
+      <div class="table-responsive">
+        <table class="table table-modern">
+          <thead><tr><th>Medicine</th><th>Time</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for row in today_rows %}
+            {% set med = medicine_lookup.get(row.medicine_id) %}
+            <tr>
+              <td class="fw-semibold">{{ med.name if med else 'Unknown' }}</td>
+              <td>{{ row.scheduled_time.strftime('%I:%M %p') }}</td>
+              <td><span class="badge-status badge-{{ row.status|lower }}">{{ row.status }}</span></td>
+              <td>
+                {% if row.status == 'Pending' %}
+                <div class="d-flex gap-1">
+                  <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="redirect_to" value="schedule.index">
+                    <input type="hidden" name="action" value="taken">
+                    <button type="submit" class="btn btn-sm btn-soft-success">Taken</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="redirect_to" value="schedule.index">
+                    <input type="hidden" name="action" value="skipped">
+                    <button type="submit" class="btn btn-sm btn-soft-secondary">Skip</button>
+                  </form>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-soft-danger dropdown-toggle" data-bs-toggle="dropdown">Remind Later</button>
+                    <ul class="dropdown-menu">
+                      {% for m in [10, 30, 60] %}
+                      <li>
+                        <form method="POST" action="{{ url_for('schedule.dose_action', history_id=row.id) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <input type="hidden" name="redirect_to" value="schedule.index">
+                          <input type="hidden" name="action" value="remind_later">
+                          <input type="hidden" name="minutes" value="{{ m }}">
+                          <button type="submit" class="dropdown-item">In {{ m }} minutes</button>
+                        </form>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-calendar2-check"></i>Nothing scheduled today.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel mb-3">
+      <div class="panel-title">Missed Today</div>
+      {% if missed %}
+        {% for row in missed %}
+        {% set med = medicine_lookup.get(row.medicine_id) %}
+        <div class="py-2 {% if not loop.last %}border-bottom{% endif %}">
+          <div class="fw-semibold small">{{ med.name if med else 'Unknown' }}</div>
+          <div class="text-muted" style="font-size:.78rem;">Was due at {{ row.scheduled_time.strftime('%I:%M %p') }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state py-3"><i class="bi bi-emoji-smile"></i>No missed doses today.</div>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <div class="panel-title">Upcoming</div>
+      {% if upcoming %}
+        {% for row in upcoming %}
+        {% set med = medicine_lookup.get(row.medicine_id) %}
+        <div class="py-2 {% if not loop.last %}border-bottom{% endif %}">
+          <div class="fw-semibold small">{{ med.name if med else 'Unknown' }}</div>
+          <div class="text-muted" style="font-size:.78rem;">{{ row.scheduled_time.strftime('%I:%M %p') }} · {{ row.date.strftime('%b %d') }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state py-3"><i class="bi bi-check2-circle"></i>Nothing upcoming.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="panel">
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    {% for day in days %}
+    <li class="nav-item">
+      <button class="nav-link {% if loop.first %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#day{{ loop.index }}" type="button">
+        {{ day.date.strftime('%a %d') }}
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="tab-content">
+    {% for day in days %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="day{{ loop.index }}">
+      {% if day.rows %}
+      <table class="table table-modern">
+        <thead><tr><th>Medicine</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for row in day.rows %}
+          {% set med = medicine_lookup.get(row.medicine_id) %}
+          <tr>
+            <td>{{ med.name if med else 'Unknown' }}</td>
+            <td>{{ row.scheduled_time.strftime('%I:%M %p') }}</td>
+            <td><span class="badge-status badge-{{ row.status|lower }}">{{ row.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state py-3"><i class="bi bi-calendar-x"></i>Nothing scheduled.</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

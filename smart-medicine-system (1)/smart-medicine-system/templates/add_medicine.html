@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Add Medicine — Smart Medicine Manager{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-4"><i class="bi bi-plus-circle text-primary"></i> Add Medicine</h4>
+
+<form method="POST" enctype="multipart/form-data" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Basic Information</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Medicine Name *</label>
+      <input type="text" name="name" class="form-control" value="{{ form.get('name','') }}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Type</label>
+      <select name="medicine_type" class="form-select">
+        <option value="">Select</option>
+        {% for t in ['Tablet','Capsule','Syrup','Injection','Drops','Cream','Inhaler','Other'] %}
+        <option value="{{ t }}" {% if form.get('medicine_type') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Quantity</label>
+      <input type="number" min="0" name="quantity" class="form-control" value="{{ form.get('quantity','') }}">
+    </div>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Prescription Information</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Dosage (as prescribed)</label>
+      <input type="text" name="dosage" class="form-control" placeholder="e.g. 500mg" value="{{ form.get('dosage','') }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Food Instruction</label>
+      <select name="food_instruction" class="form-select">
+        {% for f in food_instructions %}
+        <option value="{{ f }}" {% if form.get('food_instruction') == f %}selected{% endif %}>{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Doctor / Prescription Notes</label>
+      <textarea name="notes" class="form-control" rows="2">{{ form.get('notes','') }}</textarea>
+    </div>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Schedule</h6>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Start Date</label>
+      <input type="date" name="start_date" class="form-control" value="{{ form.get('start_date','') }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">End Date</label>
+      <input type="date" name="end_date" class="form-control" value="{{ form.get('end_date','') }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Frequency</label>
+      <select name="frequency" class="form-select" id="frequencySelect">
+        {% for f in frequency_choices %}
+        <option value="{{ f }}">{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12" id="daysOfWeekWrap" style="display:none;">
+      <label class="form-label">Days of Week (comma separated, e.g. Mon,Wed,Fri)</label>
+      <input type="text" name="days_of_week" class="form-control" placeholder="Mon,Wed,Fri">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Reminder Window (minutes)</label>
+      <input type="number" min="5" name="reminder_window" class="form-control" value="60">
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label">Daily Times *</label>
+    <div id="scheduleTimes">
+      <div class="schedule-time-row">
+        <input type="time" name="schedule_time[]" class="form-control" style="max-width:180px;" required>
+        <button type="button" class="btn btn-sm btn-soft-danger remove-time" style="display:none;"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+    <button type="button" id="addTimeBtn" class="btn btn-sm btn-outline-secondary mt-1"><i class="bi bi-plus"></i> Add another time</button>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Expiry</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Expiry Date *</label>
+      <input type="date" name="expiry_date" class="form-control" value="{{ form.get('expiry_date','') }}" required>
+    </div>
+  </div>
+
+  <h6 class="fw-bold text-muted text-uppercase small mb-3">Optional</h6>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Prescription Document / Image</label>
+      <input type="file" name="prescription_file" class="form-control" accept=".png,.jpg,.jpeg,.pdf">
+      <div class="form-text">PNG, JPG, or PDF — max 5MB.</div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Save Medicine</button>
+  <a href="{{ url_for('medicines.list_medicines') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+</form>
+
+<script>
+document.getElementById('addTimeBtn').addEventListener('click', function () {
+  const wrap = document.getElementById('scheduleTimes');
+  const row = document.createElement('div');
+  row.className = 'schedule-time-row';
+  row.innerHTML = '<input type="time" name="schedule_time[]" class="form-control" style="max-width:180px;" required>' +
+                  '<button type="button" class="btn btn-sm btn-soft-danger remove-time"><i class="bi bi-trash"></i></button>';
+  wrap.appendChild(row);
+  updateRemoveButtons();
+});
+
+function updateRemoveButtons() {
+  const rows = document.querySelectorAll('#scheduleTimes .schedule-time-row');
+  rows.forEach((row, idx) => {
+    const btn = row.querySelector('.remove-time');
+    btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+    btn.onclick = () => { row.remove(); updateRemoveButtons(); };
+  });
+}
+updateRemoveButtons();
+
+document.getElementById('frequencySelect').addEventListener('change', function () {
+  document.getElementById('daysOfWeekWrap').style.display = this.value === 'Specific Days' ? 'block' : 'none';
+});
+</script>
+{% endblock %}

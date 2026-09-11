@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Smart Medicine Manager — Never Miss a Dose{% endblock %}
+{% block guest_content %}
+<div class="hero text-center">
+  <div class="container">
+    <i class="bi bi-capsule-pill" style="font-size:2.6rem;"></i>
+    <h1 class="fw-bold mt-3">Smart Medicine Management &amp; Reminder System</h1>
+    <p class="lead mb-4">Organize prescribed medicines, never miss a scheduled dose, track expiry dates, and get answers from your own saved medicine data — all in one place.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg fw-bold me-2">Get Started Free</a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">Log In</a>
+  </div>
+</div>
+
+<div class="container my-5">
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-card">
+        <i class="bi bi-alarm"></i>
+        <h5 class="fw-bold">Scheduled Reminders</h5>
+        <p class="text-muted mb-0">Set multiple daily times per medicine. Mark doses Taken, Skipped, or Remind Later — every action is tracked.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <i class="bi bi-hourglass-split"></i>
+        <h5 class="fw-bold">Expiry Tracking</h5>
+        <p class="text-muted mb-0">Automatic alerts at 30, 7, and 1 day before expiry — so medicines never go unnoticed on the shelf.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <i class="bi bi-robot"></i>
+        <h5 class="fw-bold">Controlled AI Assistant</h5>
+        <p class="text-muted mb-0">Ask about your own saved schedule, expiry dates, or missed doses. It answers only from your data — never medical advice.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer-banner mt-5">
+    <i class="bi bi-info-circle-fill mt-1"></i>
+    <div><strong>Medical Disclaimer:</strong> This application is designed only for medicine organization, reminders, expiry tracking, and retrieval of information you enter yourself. It does not provide medical diagnosis, prescribe medicines, recommend dosage changes, or replace advice from a qualified healthcare professional.</div>
+  </div>
+</div>
+{% endblock %}

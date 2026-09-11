@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Smart Medicine Manager{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0">Notifications</h4>
+  <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-outline-secondary">Mark all as read</button>
+  </form>
+</div>
+
+<div class="mb-3">
+  <div class="btn-group flex-wrap">
+    <a href="{{ url_for('notifications.index') }}" class="btn btn-sm {{ 'btn-primary' if not category else 'btn-outline-secondary' }}">All</a>
+    <a href="{{ url_for('notifications.index', category='MEDICINE_REMINDER') }}" class="btn btn-sm {{ 'btn-primary' if category=='MEDICINE_REMINDER' else 'btn-outline-secondary' }}">Reminders</a>
+    <a href="{{ url_for('notifications.index', category='EXPIRY_ALERT') }}" class="btn btn-sm {{ 'btn-primary' if category=='EXPIRY_ALERT' else 'btn-outline-secondary' }}">Expiry Alerts</a>
+    <a href="{{ url_for('notifications.index', category='MISSED_MEDICINE') }}" class="btn btn-sm {{ 'btn-primary' if category=='MISSED_MEDICINE' else 'btn-outline-secondary' }}">Missed</a>
+    <a href="{{ url_for('notifications.index', category='SYSTEM') }}" class="btn btn-sm {{ 'btn-primary' if category=='SYSTEM' else 'btn-outline-secondary' }}">System</a>
+  </div>
+</div>
+
+<div class="panel">
+  {% if notifications %}
+  {% for n in notifications %}
+  <div class="d-flex justify-content-between align-items-start py-3 {% if not loop.last %}border-bottom{% endif %} {% if not n.is_read %}bg-light{% endif %}">
+    <div class="d-flex gap-3">
+      <div class="stat-icon
+        {% if n.notification_type == 'EXPIRY_ALERT' %}bg-soft-amber
+        {% elif n.notification_type == 'MISSED_MEDICINE' %}bg-soft-red
+        {% elif n.notification_type == 'MEDICINE_REMINDER' %}bg-soft-primary
+        {% else %}bg-soft-teal{% endif %}" style="width:38px;height:38px;margin-bottom:0;">
+        <i class="bi {% if n.notification_type == 'EXPIRY_ALERT' %}bi-hourglass-split{% elif n.notification_type == 'MISSED_MEDICINE' %}bi-exclamation-triangle{% elif n.notification_type == 'MEDICINE_REMINDER' %}bi-alarm{% else %}bi-info-circle{% endif %}" style="font-size:1rem;"></i>
+      </div>
+      <div>
+        <div class="{% if not n.is_read %}fw-semibold{% endif %}">{{ n.message }}</div>
+        <div class="text-muted small">{{ n.created_at.strftime('%b %d, %Y · %I:%M %p') }}</div>
+      </div>
+    </div>
+    {% if not n.is_read %}
+    <form method="POST" action="{{ url_for('notifications.mark_read', notification_id=n.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">Mark read</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state"><i class="bi bi-bell-slash"></i>No notifications yet.</div>
+  {% endif %}
+</div>
+{% endblock %}
